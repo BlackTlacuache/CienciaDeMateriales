@@ -1,221 +1,563 @@
-import pandas as pd
-import numpy as np
-import re
-
-file = './datos/PeriodicTableofElementsCRadius.xlsx'
-df = pd.read_excel(file)
-simbolo = df['Symbol'].to_list()
-df = df.set_index('Symbol')
-df['Ion']
-
-class Elemento:
-    def __init__(self, num_atomico, elemento, masa_atomica, neutrones, protones, electrones, periodo, grupo, fase, radioctividad, natural, tipo, radio_atomico, electronegatividad, primera_ionizacion, densidad, fusion, evaporacion, cantidad_isotopos, descubridor, año, calor_especifico, num_orbitas, num_valencia, estructura, ion, radio_ionico):
-        self.num_atomico = num_atomico
-        self.elemento = elemento
-        self.masa_atomica = masa_atomica
-        self.neutrones = neutrones
-        self.protones = protones
-        self.electrones = electrones
-        self.periodo = periodo
-        self.grupo = grupo
-        self.fase = fase
-        self.radioctividad = radioctividad
-        self.natural = natural
-        self.tipo = tipo
-        self.radio_atomico = radio_atomico
-        self.electronegatividad = electronegatividad
-        self.primera_ionizacion = primera_ionizacion
-        self.densidad = densidad
-        self.fusion = fusion
-        self.evaporacion = evaporacion
-        self.cantidad_isotopos = cantidad_isotopos
-        self.descubridor = descubridor
-        self.año = año
-        self.calor_especifico = calor_especifico
-        self.num_orbitas = num_orbitas
-        self.num_valencia = num_valencia
-        self.estructura = estructura
-        self.ion = ion
-        self.radio_ionico = radio_ionico
-        
-        #Constantes
-        self.cons_avogadro = 6.023*10**23
-        self.cons_coulomb = 9*10**9
-        self.cons_carga_elemental = 0.16*10**(-18)
-    
-    def numAtomosEnVol(uwu, VolEnvase):
-        return np.format_float_scientific(uwu.densidad *VolEnvase * uwu.cons_avogadro / uwu.masa_atomica)
-    
-    def atomosEnPeso(element, peso):
-        return (peso / element.masa_atomica)*element.cons_avogadro
-    
-    def densidadCompuestos(volumen,*elementos):
-        return sum([x.masa_atomica for x in elementos]) / volumen
-    
-    def dimensionDeCubo(element):
-        return (element.masa_atomica/element.densidad)**(1/3)
-    
-    def masaCompuesto(*element):
-        return sum([x.masa_atomica for x in element])
-    
-    def confElectronica(element):
-        tabla = ['1s2','2s2','2p6','3s2','3p6','4s2','3d10', '4p6', '5s2','4d10','5p6', '6s2', '4f14', '5d10', '6p6', '7s2', '5f14', '6d10', '7p6', '6f14', '7d10', '7f14']
-        uwu = 0
-        lim = element.num_atomico
-        confElectr = []
-        for i in tabla:
-            p = re.findall(r'-?\d+\.?\d*', i)
-            confElectr.append(i)
-            owo = int(p[1])
-            if uwu < lim - owo:
-                uwu+=owo
-            else:
-                confElectr.pop()
-                lx = abs(lim - uwu)
-                if len(i) == 3:
-                    i = i.replace(i[-1], str(lx))
-                else:
-                    for o in range(len(i)-2):
-                        i = i.replace(i[-1], '')
-                    i = i+str(abs(lim - uwu))
-                confElectr.append(i)
-                break
-        return confElectr
-    
-    def numCoordinacion(element1, element2):
-        if element1.radio_atomico > element2.radio_atomico:
-            R = element1.radio_atomico
-            r = element2.radio_atomico
-        else:
-            R = element2.radio_atomico
-            r = element1.radio_atomico
-        Ratio = r/R
-        angulo = np.arccos(R/(r+R))*(180/np.pi) 
-
-        if Ratio > 0 and Ratio < 0.155:
-            NumCoordi = 2
-            estructura = 'Lineal'
-        elif Ratio >= 0.155 and Ratio < 0.225:
-            NumCoordi = 3
-            estructura = 'Trigonal Plana'
-        elif Ratio >= 0.225 and Ratio < 0.414:
-            NumCoordi = 4
-            estructura = 'Tetraédrica o cuadrada planar'
-        elif Ratio >= 0.414 and Ratio < 0.732:
-            NumCoordi = 6
-            estructura = 'Octaédrica'
-        elif Ratio >= 0.732 and Ratio < 1:
-            NumCoordi = 8
-            estructura = 'Cubica Centrada en el Cuerpo'
-        elif Ratio == 1:
-            NumCoordi = 12
-            estructura = '?'
-    
-        return Ratio , angulo , NumCoordi, estructura
-    
-    def hummeRothery(element1, element2):
-        ratio = (element2.radio_atomico - element1.radio_atomico)/element1.radio_atomico
-        diff_electr = element1.electronegatividad - element2.electronegatividad
-        return ratio * 100, diff_electr
-
-    def fuerzaCoulomb(estado1, estado2, *element):
-        return -(Elemento.cons_coulomb* (Elemento.cons_carga_elemental)**2 * estado1 * estado2)/(sum([x.radio_atomico for x in element]))
-    
-    def densidadCalculada(forma,element):
-        if forma == 'bcc':
-            a = 4*element.radio_atomico/np.sqrt(3)
-            c = 2
-        elif forma == 'fcc':
-            a = 4*element.radio_atomico/np.sqrt(2)
-            c = 4
-        elif forma == 'hcp':
-            a = 2*element.radio_atomico
-            c = 6
-        densida = ((c*element.masa_atomica )/((a**3)*element.cons_avogadro)) * (10**7)**3/(1)
-        return densida
-    
-
-    def densidadCompuesto(elemento1, elemento2, at1, at2):
-        masa_compuesto = at1*elemento1.masa_atomica + at2 * elemento2.masa_atomica
-        return (masa_compuesto/elemento2.cons_avogadro)/(2*elemento2.radio_atomico+2*elemento1.radio_atomico)**3 *(10**7)**3
-    
-    def interpretacionCompuestos(uwu):
-        pattern2 = r'[A-Z][a-z]*'
-        elementos = re.findall(pattern2,uwu)
-
-        cantidades = re.split(pattern2,uwu)
-        cantidades.pop(0)
-        cantidades = [x.replace('', '1') if x == '' else x for x in cantidades]
-        
-        return elementos, cantidades 
-    
-    def estadoCompuestos(densidad,*element): 
-        
-        pass
-
-
-df = df.fillna('')
-nombre = []
-for i in simbolo:
-    # globals()[i]= Elemento.CrearElemento(df.iloc[i].to_list()) 
-    globals()[i]= Elemento(df.loc[i, 'AtomicNumber'],df.loc[i, 'Element'],df.loc[i, 'AtomicMass'],df.loc[i, 'NumberofNeutrons'],df.loc[i, 'NumberofProtons'],df.loc[i, 'NumberofElectrons'],df.loc[i, 'Period'],df.loc[i, 'Group'],df.loc[i, 'Phase'],df.loc[i, 'Radioactive'],df.loc[i, 'Natural'], df.loc[i, 'Type'],df.loc[i, 'AtomicRadius2'],df.loc[i, 'Electronegativity'],df.loc[i, 'FirstIonization'],df.loc[i, 'Density'],df.loc[i, 'MeltingPoint'],df.loc[i, 'BoilingPoint'],df.loc[i, 'NumberOfIsotopes'],df.loc[i, 'Discoverer'],df.loc[i, 'Year'],df.loc[i, 'SpecificHeat'],df.loc[i,'NumberofShells'],df.loc[i, 'NumberofValence'],df.loc[i, 'Estructura'], df.loc[i,'Ion'], df.loc[i,'IonicRadius']) 
-
-print(Elemento.numAtomosEnVol(Au,86.868), 'Átomos')
-
-
-print(Elemento.densidadCompuestos(2.237**3, Mg, O) , 'g/cm^3')
-
-print(Elemento.dimensionDeCubo(Mg), 'cm^3')
-
-print(f"La suma de la masa de ", Elemento.masaCompuesto(Mg, O), 'g')
-
-print(f"La longitud de un lado de un cubo de una mol de {Cu.elemento} es:",Elemento.dimensionDeCubo(Cu), 'cm')
-
-print(f"La longitud de un lado de un cubo de una mol de {Pb.elemento} es:",Elemento.dimensionDeCubo(Pb), 'cm')
-
-Na.radio_atomico + Cl.radio_atomico
-
-
-print(f'El elemento tiene número atómico {In.num_atomico} y su configuración electrónica es:\n{In.confElectronica()}')
-
-Elemento.numCoordinacion(Cl, Na)
-
-Elemento.atomosEnPeso(Ag,100)
-
-print('La configuración electrónica del Xenón es:\n' + Xe.confElectronica())
-
-Elemento.numCoordinacion(Cl, Na)
-
-Elemento.hummeRothery(Cu,Zn)
-
-Elemento.densidadCalculada('bcc',Fe)
-
-# ### Pruebas para intentar hacer otra función
-# Lo que necesito es hacer que los posibles iones se puedan sumar o restar los estados es decir que del compuesto H2O se pueda determinar que O gana 2 electrones quedando O^-2 y H pierde un electrón, por lo que queda H^1, lo que llevo es lo siguiente:
-
-ionic = Elemento.interpretacionCompuestos('SiO2Si')
-
-estados = [globals()[x].ion for x in ionic[0]]
-
-for i in simbolo:
-    df.loc[i,'Ion'] = re.sub(r'[A-Z][a-z]*', "", df.loc[i,'Ion'])
-
-# Definir expresión regular para buscar cualquier dígito seguido de un signo "+" o "-"
-patron = r'(\d)* ([\+|-])'
-
-# Definir función para reemplazar los patrones de texto encontrados
-def reemplazar_patron(match):
-    digito = match.group(1)
-    signo = match.group(2)
-    if signo == '+':
-        return digito
-    else:
-        return '-' + digito
-
-
-
-# Aplicar la función "sub" a la columna "Ion" del DataFrame
-df['Ion'] = df['Ion'].apply(lambda x: re.sub(patron, reemplazar_patron, x))
-
-
-
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 1,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import re"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 2,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "file = './datos/PeriodicTableofElementsCRadiusIones.xlsx'\n",
+    "df = pd.read_excel(file)\n",
+    "simbolo = df['Symbol'].to_list()\n",
+    "df = df.set_index('Symbol')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 3,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "class Elemento:\n",
+    "    def __init__(self, num_atomico, elemento, masa_atomica, neutrones, protones, electrones, periodo, grupo, fase, radioctividad, natural, tipo, radio_atomico, electronegatividad, primera_ionizacion, densidad, fusion, evaporacion, cantidad_isotopos, descubridor, año, calor_especifico, num_orbitas, num_valencia, estructura, ion, radio_ionico):\n",
+    "        self.num_atomico = num_atomico\n",
+    "        self.elemento = elemento\n",
+    "        self.masa_atomica = masa_atomica\n",
+    "        self.neutrones = neutrones\n",
+    "        self.protones = protones\n",
+    "        self.electrones = electrones\n",
+    "        self.periodo = periodo\n",
+    "        self.grupo = grupo\n",
+    "        self.fase = fase\n",
+    "        self.radioctividad = radioctividad\n",
+    "        self.natural = natural\n",
+    "        self.tipo = tipo\n",
+    "        self.radio_atomico = radio_atomico\n",
+    "        self.electronegatividad = electronegatividad\n",
+    "        self.primera_ionizacion = primera_ionizacion\n",
+    "        self.densidad = densidad\n",
+    "        self.fusion = fusion\n",
+    "        self.evaporacion = evaporacion\n",
+    "        self.cantidad_isotopos = cantidad_isotopos\n",
+    "        self.descubridor = descubridor\n",
+    "        self.año = año\n",
+    "        self.calor_especifico = calor_especifico\n",
+    "        self.num_orbitas = num_orbitas\n",
+    "        self.num_valencia = num_valencia\n",
+    "        self.estructura = estructura\n",
+    "        self.ion = ion\n",
+    "        self.radio_ionico = radio_ionico\n",
+    "        \n",
+    "        #Constantes\n",
+    "        self.cons_avogadro = 6.023*10**23\n",
+    "        self.cons_coulomb = 9*10**9\n",
+    "        self.cons_carga_elemental = 0.16*10**(-18)\n",
+    "    \n",
+    "    def numAtomosEnVol(uwu, VolEnvase):\n",
+    "        return np.format_float_scientific(uwu.densidad *VolEnvase * uwu.cons_avogadro / uwu.masa_atomica)\n",
+    "    \n",
+    "    def atomosEnPeso(element, peso):\n",
+    "        return (peso / element.masa_atomica)*element.cons_avogadro\n",
+    "    \n",
+    "    def densidadCompuestos(volumen,*elementos):\n",
+    "        return sum([x.masa_atomica for x in elementos]) / volumen\n",
+    "    \n",
+    "    def dimensionDeCubo(element):\n",
+    "        return (element.masa_atomica/element.densidad)**(1/3)\n",
+    "    \n",
+    "    def masaCompuesto(*element):\n",
+    "        return sum([x.masa_atomica for x in element])\n",
+    "    \n",
+    "    def confElectronica(element):\n",
+    "        tabla = ['1s2','2s2','2p6','3s2','3p6','4s2','3d10', '4p6', '5s2','4d10','5p6', '6s2', '4f14', '5d10', '6p6', '7s2', '5f14', '6d10', '7p6', '6f14', '7d10', '7f14']\n",
+    "        uwu = 0\n",
+    "        lim = element.num_atomico\n",
+    "        confElectr = []\n",
+    "        for i in tabla:\n",
+    "            p = re.findall(r'-?\\d+\\.?\\d*', i)\n",
+    "            confElectr.append(i)\n",
+    "            owo = int(p[1])\n",
+    "            if uwu < lim - owo:\n",
+    "                uwu+=owo\n",
+    "            else:\n",
+    "                confElectr.pop()\n",
+    "                lx = abs(lim - uwu)\n",
+    "                if len(i) == 3:\n",
+    "                    i = i.replace(i[-1], str(lx))\n",
+    "                else:\n",
+    "                    for o in range(len(i)-2):\n",
+    "                        i = i.replace(i[-1], '')\n",
+    "                    i = i+str(abs(lim - uwu))\n",
+    "                confElectr.append(i)\n",
+    "                break\n",
+    "        return confElectr\n",
+    "    \n",
+    "    def numCoordinacion(element1, element2):\n",
+    "        if element1.radio_atomico > element2.radio_atomico:\n",
+    "            R = element1.radio_atomico\n",
+    "            r = element2.radio_atomico\n",
+    "        else:\n",
+    "            R = element2.radio_atomico\n",
+    "            r = element1.radio_atomico\n",
+    "        Ratio = r/R\n",
+    "        angulo = np.arccos(R/(r+R))*(180/np.pi) \n",
+    "\n",
+    "        if Ratio > 0 and Ratio < 0.155:\n",
+    "            NumCoordi = 2\n",
+    "            estructura = 'Lineal'\n",
+    "        elif Ratio >= 0.155 and Ratio < 0.225:\n",
+    "            NumCoordi = 3\n",
+    "            estructura = 'Trigonal Plana'\n",
+    "        elif Ratio >= 0.225 and Ratio < 0.414:\n",
+    "            NumCoordi = 4\n",
+    "            estructura = 'Tetraédrica o cuadrada planar'\n",
+    "        elif Ratio >= 0.414 and Ratio < 0.732:\n",
+    "            NumCoordi = 6\n",
+    "            estructura = 'Octaédrica'\n",
+    "        elif Ratio >= 0.732 and Ratio < 1:\n",
+    "            NumCoordi = 8\n",
+    "            estructura = 'Cubica Centrada en el Cuerpo'\n",
+    "        elif Ratio == 1:\n",
+    "            NumCoordi = 12\n",
+    "            estructura = '?'\n",
+    "    \n",
+    "        return Ratio , angulo , NumCoordi, estructura\n",
+    "    \n",
+    "    def hummeRothery(element1, element2):\n",
+    "        ratio = (element2.radio_atomico - element1.radio_atomico)/element1.radio_atomico\n",
+    "        diff_electr = element1.electronegatividad - element2.electronegatividad\n",
+    "        return ratio * 100, diff_electr\n",
+    "\n",
+    "    def fuerzaCoulomb(estado1, estado2, *element):\n",
+    "        return -(Elemento.cons_coulomb* (Elemento.cons_carga_elemental)**2 * estado1 * estado2)/(sum([x.radio_atomico for x in element]))\n",
+    "    \n",
+    "    def densidadCalculada(forma,element):\n",
+    "        if forma == 'bcc':\n",
+    "            a = 4*element.radio_atomico/np.sqrt(3)\n",
+    "            c = 2\n",
+    "        elif forma == 'fcc':\n",
+    "            a = 4*element.radio_atomico/np.sqrt(2)\n",
+    "            c = 4\n",
+    "        elif forma == 'hcp':\n",
+    "            a = 2*element.radio_atomico\n",
+    "            c = 6\n",
+    "        densida = ((c*element.masa_atomica )/((a**3)*element.cons_avogadro)) * (10**7)**3/(1)\n",
+    "        return densida\n",
+    "    \n",
+    "\n",
+    "    def densidadCompuesto(elemento1, elemento2, at1, at2):\n",
+    "        masa_compuesto = at1*elemento1.masa_atomica + at2 * elemento2.masa_atomica\n",
+    "        return (masa_compuesto/elemento2.cons_avogadro)/(2*elemento2.radio_atomico+2*elemento1.radio_atomico)**3 *(10**7)**3\n",
+    "    \n",
+    "    def interpretacionCompuestos(uwu):\n",
+    "        pattern2 = r'[A-Z][a-z]*'\n",
+    "        elementos = re.findall(pattern2,uwu)\n",
+    "\n",
+    "        cantidades = re.split(pattern2,uwu)\n",
+    "        cantidades.pop(0)\n",
+    "        cantidades = [x.replace('', '1') if x == '' else x for x in cantidades]\n",
+    "        \n",
+    "        return elementos, cantidades \n",
+    "    \n",
+    "    def estadoCompuestos(densidad,*element): \n",
+    "        \n",
+    "        pass\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 4,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "df = df.fillna('')\n",
+    "nombre = []\n",
+    "for i in simbolo:\n",
+    "    # globals()[i]= Elemento.CrearElemento(df.iloc[i].to_list()) \n",
+    "    globals()[i]= Elemento(df.loc[i, 'AtomicNumber'],df.loc[i, 'Element'],df.loc[i, 'AtomicMass'],df.loc[i, 'NumberofNeutrons'],df.loc[i, 'NumberofProtons'],df.loc[i, 'NumberofElectrons'],df.loc[i, 'Period'],df.loc[i, 'Group'],df.loc[i, 'Phase'],df.loc[i, 'Radioactive'],df.loc[i, 'Natural'], df.loc[i, 'Type'],df.loc[i, 'AtomicRadius2'],df.loc[i, 'Electronegativity'],df.loc[i, 'FirstIonization'],df.loc[i, 'Density'],df.loc[i, 'MeltingPoint'],df.loc[i, 'BoilingPoint'],df.loc[i, 'NumberOfIsotopes'],df.loc[i, 'Discoverer'],df.loc[i, 'Year'],df.loc[i, 'SpecificHeat'],df.loc[i,'NumberofShells'],df.loc[i, 'NumberofValence'],df.loc[i, 'Estructura'], df.loc[i,'Ion'], df.loc[i,'IonicRadius']) "
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 5,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "5.126683711078505e+24 Átomos\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(Elemento.numAtomosEnVol(Au,86.868), 'Átomos')\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 6,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "3.600395397559357 g/cm^3\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(Elemento.densidadCompuestos(2.237**3, Mg, O) , 'g/cm^3')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 7,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "2.4083270245356765 cm^3\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(Elemento.dimensionDeCubo(Mg), 'cm^3')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 8,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "La suma de la masa de  40.304 g\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(f\"La suma de la masa de \", Elemento.masaCompuesto(Mg, O), 'g')\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 9,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "La longitud de un lado de un cubo de una mol de Copper es: 1.9212921261036098 cm\n",
+      "La longitud de un lado de un cubo de una mol de Lead es: 2.636961379267417 cm\n"
+     ]
+    }
+   ],
+   "source": [
+    "print(f\"La longitud de un lado de un cubo de una mol de {Cu.elemento} es:\",Elemento.dimensionDeCubo(Cu), 'cm')\n",
+    "print(f\"La longitud de un lado de un cubo de una mol de {Pb.elemento} es:\",Elemento.dimensionDeCubo(Pb), 'cm')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 10,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "0.293"
+      ]
+     },
+     "execution_count": 10,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Na.radio_atomico + Cl.radio_atomico"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 11,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "El elemento tiene número atómico 49 y su configuración electrónica es:\n",
+      "['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p6', '5s2', '4d10', '5p1']\n"
+     ]
+    }
+   ],
+   "source": [
+    "element = In\n",
+    "print(f'El elemento tiene número atómico {element.num_atomico} y su configuración electrónica es:\\n{In.confElectronica()}')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 12,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(0.5752688172043011, 50.593936487931, 6, 'Octaédrica')"
+      ]
+     },
+     "execution_count": 12,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Elemento.numCoordinacion(Cl, Na)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 13,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "5.5836763451626056e+23"
+      ]
+     },
+     "execution_count": 13,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Elemento.atomosEnPeso(Ag,100)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 14,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p6', '5s2', '4d10', '5p6']"
+      ]
+     },
+     "execution_count": 14,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Xe.confElectronica()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 15,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "['1s2', '2s2', '2p6', '3s2', '3p6', '4s2', '3d10', '4p5']"
+      ]
+     },
+     "execution_count": 15,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Br.confElectronica()"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 16,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(0.5752688172043011, 50.593936487931, 6, 'Octaédrica')"
+      ]
+     },
+     "execution_count": 16,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Elemento.numCoordinacion(Cl, Na)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 17,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "(3.9062500000000036, 0.25)"
+      ]
+     },
+     "execution_count": 17,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Elemento.hummeRothery(Cu,Zn)"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 18,
+   "metadata": {},
+   "outputs": [
+    {
+     "data": {
+      "text/plain": [
+       "7.896566196233297"
+      ]
+     },
+     "execution_count": 18,
+     "metadata": {},
+     "output_type": "execute_result"
+    }
+   ],
+   "source": [
+    "Elemento.densidadCalculada('bcc',Fe)"
+   ]
+  },
+  {
+   "attachments": {},
+   "cell_type": "markdown",
+   "metadata": {},
+   "source": [
+    "### Pruebas para intentar hacer otra función\n",
+    "Lo que necesito es hacer que los posibles iones se puedan sumar o restar los estados es decir que del compuesto H2O se pueda determinar que O gana 2 electrones quedando O^-2 y H pierde un electrón, por lo que queda H^1, lo que llevo es lo siguiente:"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 24,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "\n",
+    "ionic = Elemento.interpretacionCompuestos('SiO2')"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 25,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "estados = [globals()[x].ion for x in ionic[0]]"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 49,
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "['[', '‘', '4', '-', '’', ' ', ',', ' ', '‘', '4', '’', ']']\n",
+      "['[', '‘', '4', '-', '’', ' ', ',', ' ', '‘', '4', '’', ']']\n"
+     ]
+    }
+   ],
+   "source": [
+    "# estados[0]\n",
+    "for i in range(len(estados)):\n",
+    "    print(type(estados[0]))\n",
+    "    # if type(ionic[1][i]) == list:\n",
+    "    #     int(ionic[1][0]) * int(estados[0])\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 21,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# for i in simbolo:\n",
+    "#     df.loc[i,'Ion'] = re.sub(r'[A-Z][a-z]*', \"\", df.loc[i,'Ion'])"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 22,
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# # Definir expresión regular para buscar cualquier dígito seguido de un signo \"+\" o \"-\"\n",
+    "# patron = r'(\\d)* ([\\+|-])'\n",
+    "\n",
+    "# # Definir función para reemplazar los patrones de texto encontrados\n",
+    "# def reemplazar_patron(match):\n",
+    "#     digito = match.group(1)\n",
+    "#     signo = match.group(2)\n",
+    "#     if signo == '+':\n",
+    "#         return digito\n",
+    "#     else:\n",
+    "#         return '-' + digito\n",
+    "\n",
+    "\n",
+    "\n",
+    "# # Aplicar la función \"sub\" a la columna \"Ion\" del DataFrame\n",
+    "# df['Ion'] = df['Ion'].apply(lambda x: re.sub(patron, reemplazar_patron, x))\n"
+   ]
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.10.10"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 2
+}
