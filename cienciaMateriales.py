@@ -1,24 +1,15 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import pandas as pd
 import numpy as np
 import re
-
-
-# In[2]:
 
 
 file = './datos/PeriodicTableofElementsCRadiusIones.xlsx'
 df = pd.read_excel(file)
 simbolo = df['Symbol'].to_list()
 df = df.set_index('Symbol')
-
-
-# In[3]:
 
 
 class Elemento:
@@ -167,9 +158,6 @@ class Elemento:
         pass
 
 
-# In[4]:
-
-
 df = df.fillna('')
 nombre = []
 for i in simbolo:
@@ -177,87 +165,45 @@ for i in simbolo:
     globals()[i]= Elemento(df.loc[i, 'AtomicNumber'],df.loc[i, 'Element'],df.loc[i, 'AtomicMass'],df.loc[i, 'NumberofNeutrons'],df.loc[i, 'NumberofProtons'],df.loc[i, 'NumberofElectrons'],df.loc[i, 'Period'],df.loc[i, 'Group'],df.loc[i, 'Phase'],df.loc[i, 'Radioactive'],df.loc[i, 'Natural'], df.loc[i, 'Type'],df.loc[i, 'AtomicRadius2'],df.loc[i, 'Electronegativity'],df.loc[i, 'FirstIonization'],df.loc[i, 'Density'],df.loc[i, 'MeltingPoint'],df.loc[i, 'BoilingPoint'],df.loc[i, 'NumberOfIsotopes'],df.loc[i, 'Discoverer'],df.loc[i, 'Year'],df.loc[i, 'SpecificHeat'],df.loc[i,'NumberofShells'],df.loc[i, 'NumberofValence'],df.loc[i, 'Estructura'], df.loc[i,'Ion'], df.loc[i,'IonicRadius']) 
 
 
-# In[5]:
-
-
 print(Elemento.numAtomosEnVol(Au,86.868), 'Átomos')
-
-
-# In[6]:
 
 
 print(Elemento.densidadCompuestos(2.237**3, Mg, O) , 'g/cm^3')
 
 
-# In[7]:
-
-
 print(Elemento.dimensionDeCubo(Mg), 'cm^3')
 
 
-# In[8]:
-
-
 print(f"La suma de la masa de ", Elemento.masaCompuesto(Mg, O), 'g')
-
-
-# In[9]:
 
 
 print(f"La longitud de un lado de un cubo de una mol de {Cu.elemento} es:",Elemento.dimensionDeCubo(Cu), 'cm')
 print(f"La longitud de un lado de un cubo de una mol de {Pb.elemento} es:",Elemento.dimensionDeCubo(Pb), 'cm')
 
 
-# In[10]:
-
-
 Na.radio_atomico + Cl.radio_atomico
-
-
-# In[11]:
 
 
 element = In
 print(f'El elemento tiene número atómico {element.num_atomico} y su configuración electrónica es:\n{In.confElectronica()}')
 
 
-# In[12]:
-
-
 Elemento.numCoordinacion(Cl, Na)
-
-
-# In[13]:
 
 
 Elemento.atomosEnPeso(Ag,100)
 
 
-# In[14]:
-
-
 Xe.confElectronica()
-
-
-# In[15]:
 
 
 Br.confElectronica()
 
 
-# In[16]:
-
-
 Elemento.numCoordinacion(Cl, Na)
 
 
-# In[17]:
-
-
 Elemento.hummeRothery(Cu,Zn)
-
-
-# In[18]:
 
 
 Elemento.densidadCalculada('bcc',Fe)
@@ -266,19 +212,10 @@ Elemento.densidadCalculada('bcc',Fe)
 # ### Pruebas para intentar hacer otra función
 # Lo que necesito es hacer que los posibles iones se puedan sumar o restar los estados es decir que del compuesto H2O se pueda determinar que O gana 2 electrones quedando O^-2 y H pierde un electrón, por lo que queda H^1, lo que llevo es lo siguiente:
 
-# In[19]:
-
-
 ionic = Elemento.interpretacionCompuestos('SiO2')
 
 
-# In[20]:
-
-
 estados = [globals()[x].ion for x in ionic[0]]
-
-
-# In[21]:
 
 
 # estados[0]
@@ -286,10 +223,4 @@ for i in range(len(estados)):
     print(type(estados[0]))
     # if type(ionic[1][i]) == list:
     #     int(ionic[1][0]) * int(estados[0])
-
-
-# In[26]:
-
-
-get_ipython().system('jupyter nbconvert --to python ./cienciMateriales.ipynb')
 
