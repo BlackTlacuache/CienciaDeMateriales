@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# coding: utf-8
+
 # In[1]:
 
 
@@ -263,19 +266,19 @@ Elemento.densidadCalculada('bcc',Fe)
 # ### Pruebas para intentar hacer otra función
 # Lo que necesito es hacer que los posibles iones se puedan sumar o restar los estados es decir que del compuesto H2O se pueda determinar que O gana 2 electrones quedando O^-2 y H pierde un electrón, por lo que queda H^1, lo que llevo es lo siguiente:
 
-# In[24]:
+# In[19]:
 
 
 ionic = Elemento.interpretacionCompuestos('SiO2')
 
 
-# In[25]:
+# In[20]:
 
 
 estados = [globals()[x].ion for x in ionic[0]]
 
 
-# In[49]:
+# In[21]:
 
 
 # estados[0]
@@ -285,30 +288,8 @@ for i in range(len(estados)):
     #     int(ionic[1][0]) * int(estados[0])
 
 
-# In[21]:
+# In[26]:
 
 
-# for i in simbolo:
-#     df.loc[i,'Ion'] = re.sub(r'[A-Z][a-z]*', "", df.loc[i,'Ion'])
-
-
-# In[22]:
-
-
-# # Definir expresión regular para buscar cualquier dígito seguido de un signo "+" o "-"
-# patron = r'(\d)* ([\+|-])'
-
-# # Definir función para reemplazar los patrones de texto encontrados
-# def reemplazar_patron(match):
-#     digito = match.group(1)
-#     signo = match.group(2)
-#     if signo == '+':
-#         return digito
-#     else:
-#         return '-' + digito
-
-
-
-# # Aplicar la función "sub" a la columna "Ion" del DataFrame
-# df['Ion'] = df['Ion'].apply(lambda x: re.sub(patron, reemplazar_patron, x))
+get_ipython().system('jupyter nbconvert --to python ./cienciMateriales.ipynb')
 
