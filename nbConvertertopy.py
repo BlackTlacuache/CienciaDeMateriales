@@ -16,3 +16,4 @@ exporter.exclude_output_prompt = True
 output, _ = exporter.from_notebook_node(notebook_content)
 with open('./cienciaMateriales.py','w') as f:
     f.write(output)
+    
